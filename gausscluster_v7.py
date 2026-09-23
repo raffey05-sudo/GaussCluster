@@ -1,32 +1,3 @@
-#!/usr/bin/env python3
-"""
-GaussCluster v7 -- Iterative 3D Bayesian Mixture Model
-(full 3x3 astrometric covariance + Lindegren+21 zero-points + KDE field model)
-
-Lineage
--------
-- V3: full 3x3 error-covariance E-M with vectorized Mahalanobis distance,
-      VizieR-based zero-point attempt, dynamic C* photometric filter.
-- V4/2.1: TAP-based zero-point correction (source-dependent, with a
-      documented fallback), MAD-based robust sigma-clipping, per-iteration
-      dispersion refinement.
-- V3.1: Merged the two to include full error deconvolution.
-- V3.2: Implements strict Mahalanobis distance truncation (D_M > 3 sigma) inside the E-M loop 
-      to definitively prevent runaway cluster variance, and sanitizes TAP nullable Int16 arrays.
-- V3.3: Fixes the ZP logic where 
-u_eff_used_in_astrometry and pseudocolour are mutually 
-      exclusive for 5- and 6-parameter solutions respectively, which was causing the .all() check 
-      to fail for all sources.
-
-Setup
------
-    pip install astroquery astropy scipy matplotlib pandas numpy gaiadr3-zeropoint
-
-Usage
------
-    python gausscluster_v3_3.py --seed seeds.csv --outdir ./out [options]
-"""
-
 import os
 import sys
 import argparse
@@ -48,10 +19,6 @@ except ImportError:
 
 GLOBAL_ZPT_FALLBACK_MAS = -0.017  # Lindegren+21 global mean offset (mas), fallback only
 
-
-# --------------------------------------------------------------------------- #
-# Robust statistics
-# --------------------------------------------------------------------------- #
 
 def sigma_clip_3d(x, y, z, n_sigma=3, max_iter=5, floor_x=0.05, floor_y=0.05, floor_z=0.02):
     """MAD-based, floored, iterative 3D sigma clip (robust to single outliers)."""
@@ -83,10 +50,7 @@ def fit_kinematics(seed_pmra, seed_pmdec, seed_plx):
     ])
     return mu, sigma
 
-
-# --------------------------------------------------------------------------- #
-# Data acquisition + zero-point correction (official Gaia TAP archive)
-# --------------------------------------------------------------------------- #
+# Data acquisition + zero-point correction (official Gaia TAP archive) #
 
 def query_gaia_dr3(ra_cen, dec_cen, radius_deg, row_limit=-1):
     query = f"""
@@ -133,18 +97,11 @@ def apply_zero_point_correction(df):
 
     try:
         zpt.load_tables()
-        
-        # FIX: nu_eff_used_in_astrometry is ONLY populated for 5-parameter solutions (31).
-        # pseudocolour is ONLY populated for 6-parameter solutions (95).
-        # We cannot check .notna().all() because they are mutually exclusive!
         valid_31 = (df['astrometric_params_solved'] == 31) & df['nu_eff_used_in_astrometry'].notna()
         valid_95 = (df['astrometric_params_solved'] == 95) & df['pseudocolour'].notna()
         valid = (valid_31 | valid_95) & df['ecl_lat'].notna() & df['phot_g_mean_mag'].notna()
         
         if valid.any():
-            # For the inputs, zpt.get_zpt expects equal length arrays. We can pass the full arrays
-            # (with NaNs filled to 0) because the strometric_params_solved flag tells the C-extension 
-            # which array to actually read from for that specific source.
             zp = zpt.get_zpt(
                 np.asarray(df.loc[valid, 'phot_g_mean_mag'].values, dtype=np.float64),
                 np.asarray(df.loc[valid, 'nu_eff_used_in_astrometry'].fillna(0).values, dtype=np.float64),
@@ -166,9 +123,8 @@ def apply_zero_point_correction(df):
     return df
 
 
-# --------------------------------------------------------------------------- #
-# Main
-# --------------------------------------------------------------------------- #
+
+# Main #
 
 def main():
     parser = argparse.ArgumentParser(
@@ -237,9 +193,6 @@ def main():
         print("Warning: very few sources survive quality cuts -- consider a larger --radius "
               "or relaxing --max-pm-error / --max-ruwe.")
 
-    # Dynamic C* photometric-quality flag (Riello+21 envelope, both bounds).
-    # A FLAG, not a cut -- never removes sources from the kinematic analysis,
-    # so red/faint lower-main-sequence and PMS members stay in play.
     bp_rp2 = df['bp_rp'] ** 2
     c_upper = 1.3 + 0.06 * bp_rp2
     c_lower = 1.0 + 0.015 * bp_rp2
@@ -290,9 +243,7 @@ def main():
 
     all_data = np.vstack([df['pmra'].values, df['pmdec'].values, df['parallax_corrected'].values]).T
 
-    # 5. Static background KDE (fit once at the initial estimate -- refitting
-    #    a 3D KDE every iteration is expensive and the field distribution
-    #    itself doesn't depend on the cluster's kinematic fit).
+    # 5. Static background KDE (fit once at the initial estimate
     r3_init = np.sqrt(np.sum(((all_data - cluster_mean) / cluster_sigma) ** 2, axis=1))
     kde_field_mask = r3_init > args.excl_sigma
     kde_field_df = df[kde_field_mask]
@@ -342,8 +293,6 @@ def main():
         
         # MAHALANOBIS TRUNCATION: Any star further than 3 sigma from the 
         # cluster mean in covariance space has its cluster probability forced to exactly 0. 
-        # This severs the tails of the Gaussian and prevents distant field 
-        # outliers from pulling on the variance and creating runaway inflation.
         phi_c[D_M > 3.0] = 0.0
 
         P_new = (nc * phi_c) / (nc * phi_c + nf * phi_f)
