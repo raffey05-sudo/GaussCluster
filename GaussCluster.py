@@ -381,6 +381,7 @@ def main():
                      label='STORM', density=True, histtype='step', linewidth=2)
     axes[2].set_xlim(cluster_mean[2] - 1.5, cluster_mean[2] + 1.5)
     axes[2].set_xlabel('Parallax, zero-point corrected (mas)', fontsize=15)
+    axes[2].set_ylabel('Density', fontsize=15)
     axes[2].tick_params(axis='both', which='major', labelsize=12)
     axes[2].legend(fontsize=12, loc='best')
     axes[2].set_title('Parallax Distribution', fontsize=20)
