@@ -34,14 +34,18 @@ pip install -r requirements.txt
 *(Dependencies include `numpy`, `scikit-learn`, `astropy`, `astroquery`, and `matplotlib`).*
 
 ## Quick Start
-The primary script `gausscluster_v7.py` acts as the core pipeline engine. It is currently configured to run standalone extractions.
+The primary script `GaussCluster.py` acts as the core pipeline engine. 
 
 ```bash
-# Run the core 3GMM pipeline
-python gausscluster_v7.py
+# Run the core 3GMM pipeline (requires a seed catalogue and output directory)
+python GaussCluster.py --seed path/to/seed.csv --outdir ./results
 
 # Cross-reference outputs against density-based models (e.g., STORM)
-python compare_clusters.py
+python compare_clusters.py --gc ./results/GaussCluster_Members.csv \
+                           --storm path/to/storm_members.csv \
+                           --field ./results/GaussCluster_Field.csv \
+                           --outimg ./results/comparison.png \
+                           --title "Cluster Comparison"
 ```
 
 ## Output Files

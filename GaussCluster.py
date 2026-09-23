@@ -128,7 +128,7 @@ def apply_zero_point_correction(df):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="GaussCluster v7: Iterative 3D Bayesian Mixture Model "
+        description="GaussCluster: Iterative 3D Bayesian Mixture Model "
                     "(full 3x3 covariance, zero-point corrected, KDE field model, Mahalanobis Truncated)")
     parser.add_argument('--seed', required=True)
     parser.add_argument('--outdir', required=True)
@@ -149,7 +149,7 @@ def main():
     args = parser.parse_args()
 
     os.makedirs(args.outdir, exist_ok=True)
-    print("=== GaussCluster v7 Initialization ===")
+    print("=== GaussCluster Initialization ===")
 
     # 1. Load seed data
     try:
@@ -322,9 +322,9 @@ def main():
             break
 
     members = df[df['P_memb_3D'] >= args.threshold].copy()
-    out_csv = os.path.join(args.outdir, "GaussCluster_v7_Members.csv")
+    out_csv = os.path.join(args.outdir, "GaussCluster_Members.csv")
     members.to_csv(out_csv, index=False)
-    df.to_csv(os.path.join(args.outdir, 'GaussCluster_v7_Field.csv'), index=False)
+    df.to_csv(os.path.join(args.outdir, 'GaussCluster_Field.csv'), index=False)
     print(f"\nSUCCESS: Extracted {len(members)} true 3D members (P >= {args.threshold}).")
     print(f"Catalog saved to: {out_csv}")
     print(f"Final: pmRA={cluster_mean[0]:.3f}+-{cluster_sigma[0]:.3f}, "
@@ -337,7 +337,7 @@ def main():
 
     axes[0].scatter(df['pmra'], df['pmdec'], s=1, color='grey', alpha=0.1, label='Field')
     axes[0].scatter(members['pmra'], members['pmdec'], s=10, marker='+', color='blue',
-                     label=f'GaussCluster v7 ({len(members)})')
+                     label=f'GaussCluster ({len(members)})')
 
     storm_matched = None
     if args.storm is not None:
@@ -362,7 +362,7 @@ def main():
     axes[0].set_title('Vector Point Diagram', fontsize=20)
 
     axes[1].scatter(df['ra'], df['dec'], s=1, color='grey', alpha=0.05)
-    axes[1].scatter(members['ra'], members['dec'], s=10, marker='+', color='blue', label='GaussCluster v7')
+    axes[1].scatter(members['ra'], members['dec'], s=10, marker='+', color='blue', label='GaussCluster')
     if storm_matched is not None:
         axes[1].scatter(storm_matched['ra'], storm_matched['dec'], facecolors='none', edgecolors='red',
                          s=40, label='STORM')
@@ -375,7 +375,7 @@ def main():
     axes[2].hist(df['parallax_corrected'], bins=50, range=(cluster_mean[2] - 3, cluster_mean[2] + 3), alpha=0.3,
                  color='grey', label='Field', density=True)
     axes[2].hist(members['parallax_corrected'], bins=20, alpha=0.5, color='blue',
-                 label='GaussCluster v7', density=True)
+                 label='GaussCluster', density=True)
     if storm_matched is not None:
         axes[2].hist(storm_matched['parallax_corrected'], bins=15, alpha=0.5, color='red',
                      label='STORM', density=True, histtype='step', linewidth=2)
@@ -390,7 +390,7 @@ def main():
     cmd_members = members[members['phot_quality_ok']]
     cmd_storm = storm_matched[storm_matched['phot_quality_ok']] if storm_matched is not None else None
     axes[3].scatter(cmd_members['bp_rp'], cmd_members['phot_g_mean_mag'], s=10, marker='+', color='blue',
-                     label='GaussCluster v7')
+                     label='GaussCluster')
     if cmd_storm is not None:
         axes[3].scatter(cmd_storm['bp_rp'], cmd_storm['phot_g_mean_mag'], facecolors='none',
                          edgecolors='red', s=40, label='STORM')
@@ -399,10 +399,10 @@ def main():
     axes[3].set_ylabel('G (mag)', fontsize=15)
     axes[3].tick_params(axis='both', which='major', labelsize=12)
     axes[3].legend(fontsize=12, loc='best')
-    axes[3].set_title('Colour-Magnitude Diagram (C* flagged)', fontsize=20)
+    axes[3].set_title('Colour-Magnitude Diagram', fontsize=20)
 
     plt.tight_layout()
-    out_img = os.path.join(args.outdir, 'GaussCluster_v7_Diagnostics_Cosmetic.png')
+    out_img = os.path.join(args.outdir, 'GaussCluster_Diagnostics_Cosmetic.png')
     plt.savefig(out_img, dpi=150)
     print(f"Diagnostic plot saved to: {out_img}")
     print("=== Run Complete ===")
