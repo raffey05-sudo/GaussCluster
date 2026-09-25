@@ -145,6 +145,7 @@ def main():
     parser.add_argument('--excl-sigma', type=float, default=4.0,
                          help="Core/field split radius, in normalised sigma units.")
     parser.add_argument('--kde-cap', type=int, default=50000)
+    parser.add_argument('--spatial-cut', type=float, default=15.0, help="Maximum distance (in arcmin) from the median RA/Dec to keep a member.")
     parser.add_argument('--storm', default=None, help="STORM catalogue for comparison.")
     args = parser.parse_args()
 
@@ -322,6 +323,17 @@ def main():
             break
 
     members = df[df['P_memb_3D'] >= args.threshold].copy()
+    
+    if args.spatial_cut is not None:
+        med_ra = members['ra'].median()
+        med_dec = members['dec'].median()
+        center = SkyCoord(ra=med_ra*u.deg, dec=med_dec*u.deg)
+        members_coords = SkyCoord(ra=members['ra'].values*u.deg, dec=members['dec'].values*u.deg)
+        seps = center.separation(members_coords).to(u.arcmin).value
+        valid = seps <= args.spatial_cut
+        members = members[valid]
+        print(f"Applied spatial cut of {args.spatial_cut} arcmin. Remaining members: {len(members)}")
+
     out_csv = os.path.join(args.outdir, "GaussCluster_Members.csv")
     members.to_csv(out_csv, index=False)
     df.to_csv(os.path.join(args.outdir, 'GaussCluster_Field.csv'), index=False)

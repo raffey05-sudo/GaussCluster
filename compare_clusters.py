@@ -1,4 +1,4 @@
-import argparse
+﻿import argparse
 import os
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -14,6 +14,7 @@ def main():
     parser.add_argument('--field', required=True, help="GaussCluster field CSV")
     parser.add_argument('--outimg', required=True, help="Path to save the output diagnostic image")
     parser.add_argument('--title', required=True, help="Cluster Title")
+    parser.add_argument('--spatial-cut', type=float, default=15.0, help="Cutoff in arcmin from GC center")
     args = parser.parse_args()
 
     gc = pd.read_csv(args.gc)
@@ -29,6 +30,23 @@ def main():
     s_g = 'Gmag' if 'Gmag' in storm.columns else 'phot_g_mean_mag'
     s_bp = 'BPmag' if 'BPmag' in storm.columns else 'phot_bp_mean_mag'
     s_rp = 'RPmag' if 'RPmag' in storm.columns else 'phot_rp_mean_mag'
+
+    # Apply spatial cut if requested
+    if args.spatial_cut is not None:
+        # The GC catalog is ALREADY cut by GaussCluster.py, so we just use its center
+        med_ra = gc['ra'].median()
+        med_dec = gc['dec'].median()
+        center = SkyCoord(ra=med_ra*u.deg, dec=med_dec*u.deg)
+        
+        # We DO NOT cut gc again here! Re-cutting it based on the median of the already-cut 
+        # catalog causes edge-cases to drop out due to the center shifting slightly.
+        
+        # Cut External Catalog
+        storm_coords = SkyCoord(ra=storm[s_ra].values*u.deg, dec=storm[s_dec].values*u.deg)
+        storm_valid = center.separation(storm_coords).to(u.arcmin).value <= args.spatial_cut
+        storm = storm[storm_valid]
+
+        print(f"Applied {args.spatial_cut} arcmin cut. GC remaining: {len(gc)}, {args.extname} remaining: {len(storm)}")
 
     # Coordinate crossmatch
     gc_sc = SkyCoord(ra=gc['ra'].values*u.deg, dec=gc['dec'].values*u.deg)
@@ -99,4 +117,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
 
