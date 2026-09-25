@@ -1,4 +1,4 @@
-﻿# GaussCluster
+# GaussCluster
 **A 3D Kinematic Gaussian Mixture Model Pipeline for Open Cluster Extraction**
 
 A probabilistic detection pipeline built on Gaia DR3 astrometry, developed as part of an Astrophysics dissertation. `GaussCluster` is specifically designed to ingest spatial seed cores and recover extended, diffuse tidal halos in heavily obscured galactic environments.
@@ -9,7 +9,7 @@ While density-based algorithms like HDBSCAN (e.g., STORM, Hunt et al. 2023) exce
 `GaussCluster` solves this by operating strictly in 3D probabilistic kinematic space (proper motion $\mu_{\alpha*}$, $\mu_{\delta}$, and parallax $\varpi$). It isolates the true dynamical members of a cluster from dense galactic backgrounds, completely independent of photometric priors. 
 
 From an initial seed coordinate or catalogue, the pipeline can:
-- **Autonomously filter astrometry:** Interface directly with Gaia DR3, purging sources with RUWE $\ge 1.4$ or high proper motion errors.
+- **Filter astrometry:** Interface directly with Gaia DR3, purging sources with RUWE $\ge 1.4$ or high proper motion errors.
 - **Anchor the Kinematic Core:** Utilize a 3D sigma-clipping algorithm to establish a systemic cluster centroid.
 - **Map the Field Topology:** Employ a Non-Parametric Kernel Density Estimator (KDE) to accurately map the asymmetric astrometric density of the surrounding galactic field.
 - **Calculate Dynamic Priors:** Establish a dynamic Bayesian prior ($n_c$) without manual steering, discovering the true physical scale of the cluster.
@@ -21,8 +21,8 @@ The pipeline was critically evaluated and validated against two extreme targets:
 
 | Cluster | Members Recovered | Notes |
 | :--- | :--- | :--- |
-| **NGC 957** | 339 ($P \ge 0.9$) | Clean validation target. Isochrone age precisely matches literature (10 Myr). |
-| **Berkeley 87** | 103 ($P \ge 0.9$) | Highly complex, differential reddening target (Cygnus X). Pipeline successfully bypassed massive spatial contamination to recover a clean kinematic Main Sequence. |
+| **NGC 957** | 180 ($P \ge 0.9$) | Clean validation target. Isochrone age precisely matches literature (10 Myr). |
+| **Berkeley 87** | 70 ($P \ge 0.9$) | Highly complex, differential reddening target (Cygnus X). Pipeline successfully bypassed massive spatial contamination to recover a clean kinematic Main Sequence. |
 
 ## Installation
 Tested on Python 3.9+. A virtual environment is recommended.
